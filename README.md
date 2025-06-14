@@ -8,12 +8,19 @@
 
 ## Como jogar?
 
+* Clone o atual repositório para uma pasta, digitando:
+
+```
+git clone https://github.com/DuMilo/far-far-away-game.git
+```
+
 * Na sua máquina, tenha instalado Python e suas devidas extensões (pip necessário).
 * Após isso, no terminal do seu VSCode ou no terminal do seu computador, digite:
 
 ```
 pip install pgzero
 ```
+
 * Finalmente, você poderá rodar no editor de código de sua preferência e se divertir!
 
 ##
