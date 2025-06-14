@@ -19,7 +19,9 @@ platforms = build_tile_map("platformer_platforms.csv", TILE_SIZE)
 obstacles = build_tile_map("platformer_obstacles.csv", TILE_SIZE)
 coins = build_tile_map("platformer_coins.csv", TILE_SIZE)
 backgrounds = build_tile_map("platformer_background.csv", TILE_SIZE)
-
+enemies_1 = build_tile_map("platformer_enemies_1.csv", TILE_SIZE)
+enemies_2 = build_tile_map("platformer_enemies_2.csv", TILE_SIZE)
+diamonds = build_tile_map("platformer_diamonds.csv", TILE_SIZE)
 
 player = Actor("idle_right_1")
 player.bottomleft = (0, 1000)
@@ -46,6 +48,8 @@ for i in range(player.health):
     heart.topright = (WIDTH - 10 - (i * (heart.width + 5)), 10)
     hearts.append(heart)
 
+coin_ui_icon = Actor("tiles/tile_0002")
+coin_ui_icon.topleft = (10, 10)
 
 JUMP_BUFFER_FRAMES = 8
 player.jump_buffer_timer = 0
@@ -73,6 +77,22 @@ hurt_right_frames = [
 hurt_left_frames = [
     "hurt_left_1", "hurt_left_2", "hurt_left_3", "hurt_left_4"
 ]
+attack_right_frames = [
+    "attack_right_1", "attack_right_2", "attack_right_3",
+    "attack_right_4"
+]
+attack_left_frames = [
+    "attack_left_1", "attack_left_2", "attack_left_3",
+    "attack_left_4"
+]
+
+enemie_1_frames = [
+    "enemie_1_sprite_1", "enemie_1_sprite_2"
+]
+
+enemie_2_frames = [
+    "enemie_2_sprite_1", "enemie_2_sprite_2"
+]
 
 
 player.animation_timer = 0
@@ -99,14 +119,27 @@ def draw():
         pos = (coin.left - camera_x, coin.top - camera_y)
         screen.blit(coin.image, pos)
 
+    for enemy in enemies_1:
+        pos = (enemy.left - camera_x, enemy.top - camera_y)
+        screen.blit(enemy.image, pos)
+
+    for enemy in enemies_2:
+        pos = (enemy.left - camera_x, enemy.top - camera_y)
+        screen.blit(enemy.image, pos)
+
+    for diamond in diamonds:
+        pos = (diamond.left - camera_x, diamond.top - camera_y)
+        screen.blit(diamond.image, pos)
+
     if not player.is_invincible or player.animation_timer % 4 < 2:
         pos = (player.left - camera_x, player.top - camera_y)
         screen.blit(player.image, pos)
 
-    score_text = f"Coins: {score}"
+    coin_ui_icon.draw()
+    score_text = f"x{score}"
     screen.draw.text(
         score_text,
-        (10, 10),
+        midleft=(coin_ui_icon.right + 6, coin_ui_icon.centery),
         color="white",
         fontsize=24,
         shadow=(1, 1),
@@ -159,24 +192,6 @@ def update():
     player.y += player.velocity_y
     player.velocity_y += gravity
 
-    player.is_on_ground = False
-    if player.velocity_y >= 0:
-        indices = player.collidelistall(platforms)
-        for platform_index in indices:
-            platform = platforms[platform_index]
-            if player.bottom <= platform.top + player.velocity_y:
-                player.bottom = platform.top
-                player.velocity_y = 0
-                player.is_on_ground = True
-                player.coyote_timer = COYOTE_TIME_FRAMES
-                break
-
-    for coin in coins[:]:
-        if player.colliderect(coin):
-            coins.remove(coin)
-            score += 1
-            sounds.sfx_coin.play()
-
     if player.is_invincible:
         player.invincibility_timer -= 1
         if player.invincibility_timer <= 0:
@@ -194,6 +209,24 @@ def update():
             if player.health <= 0:
                 game_over = True
                 clock.schedule_unique(quit, 3.0)
+
+    player.is_on_ground = False
+    if player.velocity_y >= 0:
+        indices = player.collidelistall(platforms)
+        for platform_index in indices:
+            platform = platforms[platform_index]
+            if player.bottom <= platform.top + player.velocity_y:
+                player.bottom = platform.top
+                player.velocity_y = 0
+                player.is_on_ground = True
+                player.coyote_timer = COYOTE_TIME_FRAMES
+                break
+
+    for coin in coins[:]:
+        if player.colliderect(coin):
+            coins.remove(coin)
+            score += 1
+            sounds.sfx_coin.play()
 
     player.animation_timer += 1
     if player.is_invincible:
@@ -246,6 +279,7 @@ def update():
 def on_key_down(key):
     if key == keys.UP and not game_over:
         player.jump_buffer_timer = JUMP_BUFFER_FRAMES
+        sounds.sfx_jump.play()
 
 
 pgzrun.go()
