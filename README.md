@@ -1,8 +1,7 @@
-# 👻 Tão, tão distante! - O Jogo
+# 👻 Far far away! - The Game
 
 
-
-### Tão, tão distante se trata de um jogo de plataforma, no qual você avança para cima vendo o quão distante você poderá ir! Nessa jornada, você terá que desviar de obstáculos, matar inimigos (ou só passar longe) de inimigos, mas pelo menos as moedinhas você pode coletar!
+### 'Far far away' ou 'Tão, tão distante' se trata de um jogo de plataforma, no qual você avança para cima vendo o quão distante você poderá ir! Nessa jornada, você terá que desviar de obstáculos, matar (ou só passar longe) inimigos, mas pelo menos as moedinhas você pode coletar!
 
 ##
 

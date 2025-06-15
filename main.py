@@ -1,8 +1,6 @@
 import pgzrun
-from pgzero.builtins import clock
-from pygame import Rect
-from pgz_tile_platformer_system import *
-
+from pgzero.builtins import clock, Actor, Rect, sounds, music, keys, keyboard
+from pgz_tile_platformer_system import build_tile_map
 
 TILE_SIZE = 16
 ROWS = 30
@@ -11,10 +9,8 @@ WIDTH = TILE_SIZE * ROWS
 HEIGHT = TILE_SIZE * COLS
 TITLE = "Far far away!"
 
-
 camera_x = 0
 camera_y = 750
-
 
 platforms = build_tile_map("platformer_platforms.csv", TILE_SIZE)
 coins = build_tile_map("platformer_coins.csv", TILE_SIZE)
@@ -23,16 +19,13 @@ enemies_1 = build_tile_map("platformer_enemies_1.csv", TILE_SIZE)
 enemies_2 = build_tile_map("platformer_enemies_2.csv", TILE_SIZE)
 diamonds = build_tile_map("platformer_diamonds.csv", TILE_SIZE)
 
-
 player = Actor("idle_right_1")
 player.bottomleft = (0, 1000)
-
 
 player.velocity_x = 3
 player.velocity_y = 0
 gravity = 0.5
 jump_velocity = -7
-
 
 player.health = 5
 player.is_on_ground = False
@@ -48,7 +41,6 @@ score = 0
 game_state = 'menu'
 sound_on = True
 music_on = True
-
 
 hearts = []
 for i in range(player.health):
@@ -68,12 +60,10 @@ button_sound.pos = (WIDTH / 2 + 210, HEIGHT / 2 + 130)
 button_quit = Actor("ui/quit_button")
 button_quit.pos = (WIDTH / 2, HEIGHT / 2 + 50)
 
-
 JUMP_BUFFER_FRAMES = 8
 player.jump_buffer_timer = 0
 COYOTE_TIME_FRAMES = 6
 player.coyote_timer = 0
-
 
 walk_right_frames = [
     "walk_right_1", "walk_right_2", "walk_right_3", "walk_right_4",
@@ -110,14 +100,12 @@ enemie_2_frames = [
     "enemie_2_sprite_1", "enemie_2_sprite_2"
 ]
 
-
 player.animation_timer = 0
 player.current_frame = 0
 ANIMATION_SPEED = 5
 ATTACK_DURATION = 20
 ATTACK_COOLDOWN = 30
 ENEMY_ANIMATION_SPEED = 8
-
 
 for enemy in enemies_1:
     enemy.velocity_y = 0.5
@@ -132,7 +120,6 @@ for enemy in enemies_2:
     enemy.patrol_start_x = enemy.x
     enemy.animation_timer = 0
     enemy.current_frame = 0
-
 
 music.play('down_under')
 
@@ -215,7 +202,7 @@ def draw_game():
             scolor="black"
         )
         sounds.game_over.play()
-    
+
     if game_won:
         screen.draw.text(
             "You Won!",
@@ -255,7 +242,7 @@ def update_game():
         enemy.y += enemy.velocity_y
         if abs(enemy.y - enemy.patrol_start_y) >= enemy.patrol_distance:
             enemy.velocity_y *= -1
-        
+
         enemy.animation_timer += 1
         if enemy.animation_timer >= ENEMY_ANIMATION_SPEED:
             enemy.animation_timer = 0
@@ -276,7 +263,7 @@ def update_game():
                 (enemy.current_frame + 1) % len(enemie_2_frames)
             )
             enemy.image = enemie_2_frames[enemy.current_frame]
-    
+
     is_moving_horizontally = False
 
     if not player.is_attacking:
@@ -284,7 +271,7 @@ def update_game():
             player.x -= player.velocity_x
             player.direction = 'left'
             is_moving_horizontally = True
-        
+
         if keyboard.right and player.right < WIDTH:
             player.x += player.velocity_x
             player.direction = 'right'
@@ -296,23 +283,23 @@ def update_game():
         player.coyote_timer -= 1
     if player.attack_cooldown > 0:
         player.attack_cooldown -= 1
-    
+
     if player.is_attacking:
         player.attack_timer -= 1
-        
+
         hitbox_x = player.right if player.direction == 'right' else player.left - 24
         attack_hitbox = Rect(hitbox_x, player.top, 24, player.height)
-        
+
         for enemy in enemies_1[:]:
             if enemy.colliderect(attack_hitbox):
                 enemies_1.remove(enemy)
         for enemy in enemies_2[:]:
             if enemy.colliderect(attack_hitbox):
                 enemies_2.remove(enemy)
-        
+
         if player.attack_timer <= 0:
             player.is_attacking = False
-    
+
     if player.jump_buffer_timer > 0 and player.coyote_timer > 0:
         player.velocity_y = jump_velocity
         player.is_on_ground = False
@@ -351,7 +338,7 @@ def update_game():
             score += 1
             if sound_on:
                 sounds.sfx_coin.play()
-    
+
     for diamond in diamonds[:]:
         if player.colliderect(diamond):
             game_won = True
@@ -423,7 +410,7 @@ def on_key_down(key):
             player.jump_buffer_timer = JUMP_BUFFER_FRAMES
             if sound_on:
                 sounds.sfx_jump.play()
-        
+
         if key == keys.D and not player.is_attacking and player.attack_cooldown <= 0:
             player.is_attacking = True
             player.attack_timer = ATTACK_DURATION
@@ -437,10 +424,10 @@ def on_mouse_down(pos):
     if game_state == 'menu':
         if button_start.collidepoint(pos):
             game_state = 'playing'
-        
+
         if button_quit.collidepoint(pos):
             quit()
-        
+
         if button_sound.collidepoint(pos):
             music_on = not music_on
             if music_on:
