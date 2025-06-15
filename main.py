@@ -23,6 +23,7 @@ enemies_1 = build_tile_map("platformer_enemies_1.csv", TILE_SIZE)
 enemies_2 = build_tile_map("platformer_enemies_2.csv", TILE_SIZE)
 diamonds = build_tile_map("platformer_diamonds.csv", TILE_SIZE)
 
+
 player = Actor("idle_right_1")
 player.bottomleft = (0, 1000)
 
@@ -40,6 +41,8 @@ player.is_invincible = False
 player.invincibility_timer = 0
 game_over = False
 score = 0
+game_state = 'menu'
+sound_on = True
 
 
 hearts = []
@@ -50,6 +53,15 @@ for i in range(player.health):
 
 coin_ui_icon = Actor("tiles/tile_0002")
 coin_ui_icon.topleft = (10, 10)
+
+
+button_start = Actor("ui/start_button")
+button_start.pos = (WIDTH / 2, HEIGHT / 2 - 10)
+button_sound = Actor("ui/music_button")
+button_sound.pos = (WIDTH / 2 + 210, HEIGHT / 2 + 130)
+button_quit = Actor("ui/quit_button")
+button_quit.pos = (WIDTH / 2, HEIGHT / 2 + 50)
+
 
 JUMP_BUFFER_FRAMES = 8
 player.jump_buffer_timer = 0
@@ -85,11 +97,9 @@ attack_left_frames = [
     "attack_left_1", "attack_left_2", "attack_left_3",
     "attack_left_4"
 ]
-
 enemie_1_frames = [
     "enemie_1_sprite_1", "enemie_1_sprite_2"
 ]
-
 enemie_2_frames = [
     "enemie_2_sprite_1", "enemie_2_sprite_2"
 ]
@@ -100,7 +110,15 @@ player.current_frame = 0
 ANIMATION_SPEED = 5
 
 
-def draw():
+music.play('down_under')
+
+
+def on_music_end():
+    if sound_on:
+        music.play('down_under')
+
+
+def draw_game():
     screen.clear()
 
     for background in backgrounds:
@@ -160,7 +178,28 @@ def draw():
         )
 
 
-def update():
+def draw_menu():
+    screen.clear()
+    screen.fill("black")
+    screen.draw.text(
+        TITLE,
+        center=(WIDTH / 2, HEIGHT / 2 - 100),
+        color="white",
+        fontsize=60
+    )
+    button_start.draw()
+    button_sound.draw()
+    button_quit.draw()
+
+
+def draw():
+    if game_state == 'menu':
+        draw_menu()
+    elif game_state == 'playing':
+        draw_game()
+
+
+def update_game():
     global camera_x, camera_y, score, game_over
 
     if game_over:
@@ -172,7 +211,7 @@ def update():
         player.x -= player.velocity_x
         player.direction = 'left'
         is_moving_horizontally = True
-
+    
     if keyboard.right and player.right < WIDTH:
         player.x += player.velocity_x
         player.direction = 'right'
@@ -202,7 +241,8 @@ def update():
             player.is_invincible = True
             player.invincibility_timer = 90
             player.velocity_y = jump_velocity * 0.6
-            sounds.sfx_hurt.play()
+            if sound_on:
+                sounds.sfx_hurt.play()
             if hearts:
                 hearts.pop()
 
@@ -226,7 +266,8 @@ def update():
         if player.colliderect(coin):
             coins.remove(coin)
             score += 1
-            sounds.sfx_coin.play()
+            if sound_on:
+                sounds.sfx_coin.play()
 
     player.animation_timer += 1
     if player.is_invincible:
@@ -276,10 +317,37 @@ def update():
     camera_y += (target_y - camera_y) * 0.05
 
 
+def update():
+    if game_state == 'playing':
+        update_game()
+
+
 def on_key_down(key):
-    if key == keys.UP and not game_over:
-        player.jump_buffer_timer = JUMP_BUFFER_FRAMES
-        sounds.sfx_jump.play()
+    global game_state
+    if game_state == 'playing':
+        if key == keys.UP and not game_over:
+            player.jump_buffer_timer = JUMP_BUFFER_FRAMES
+            if sound_on:
+                sounds.sfx_jump.play()
+
+
+def on_mouse_down(pos):
+    global game_state, sound_on
+    if game_state == 'menu':
+        if button_start.collidepoint(pos):
+            game_state = 'playing'
+        
+        if button_quit.collidepoint(pos):
+            quit()
+        
+        if button_sound.collidepoint(pos):
+            sound_on = not sound_on
+            if sound_on:
+                button_sound.image = 'ui/music_button'
+                music.unpause()
+            else:
+                button_sound.image = 'ui/no_music_button'
+                music.pause()
 
 
 pgzrun.go()
