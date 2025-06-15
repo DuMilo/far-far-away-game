@@ -25,12 +25,26 @@ pip install pgzero
 
 ##
 
+## Teclas do Jogo:
+
+* Setas direita e esquerda para movimentação e seta para cima para pulo.
+
+![keyboard_arrow_left_outline](https://github.com/user-attachments/assets/bc9e6e15-e3aa-4164-9791-6332e23d952b)
+![keyboard_arrow_up_outline](https://github.com/user-attachments/assets/63e2b4c8-e3ba-4587-9478-755794d11766)
+![keyboard_arrow_right_outline](https://github.com/user-attachments/assets/9c267f9b-4453-4633-94b2-e458fcbce79c)
+
+* Tecla 'D' para atacar.
+
+![keyboard_d_outline](https://github.com/user-attachments/assets/1fedc623-a7f7-41e6-a8d0-5e7a02ed5c18)
+
+* **Não necessariamente uma tecla**, porém ao pular na cabeça de um inimigo, ele é derrotado também.
+
 ## Ferramentas Utilizadas:
 
 * Linguagem de Programação: Python
 * Bibliotecas: PyGame Zero
 * UI/UX: <a href="https://kenney.nl/assets/1-bit-platformer-pack">Kenney Assets</a>, <a href="https://craftpix.net/freebies/free-pixel-art-tiny-hero-sprites/">CraftPix.net</a> e Aseprite
-* Música e sons: <a href='https://innlydian.itch.io/8-bit-music-pack'>Innlydian (Itch.io)</a> e <a href="https://kenney.nl/assets/1-bit-platformer-pack">Kenney Assets</a>
+* Música e sons: <a href='https://innlydian.itch.io/8-bit-music-pack'>Innlydian (Itch.io)</a>, <a href="https://kenney.nl/assets/1-bit-platformer-pack">Kenney Assets</a> e <a href='https://domiwav.itch.io/8-bit-rpg-adventure-and-fantasy-music-pack-pixel-adventures-vol-1'>Domi.wav (Itch.io)</a>
 * Level Design: Tiled
 * IDEs: VSCode
 
