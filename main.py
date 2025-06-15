@@ -1,5 +1,6 @@
 import pgzrun
 from pgzero.builtins import clock
+from pygame import Rect
 from pgz_tile_platformer_system import *
 
 
@@ -8,7 +9,7 @@ ROWS = 30
 COLS = 20
 WIDTH = TILE_SIZE * ROWS
 HEIGHT = TILE_SIZE * COLS
-TITLE = "Tão tão distante!"
+TITLE = "Far far away!"
 
 
 camera_x = 0
@@ -16,7 +17,6 @@ camera_y = 750
 
 
 platforms = build_tile_map("platformer_platforms.csv", TILE_SIZE)
-obstacles = build_tile_map("platformer_obstacles.csv", TILE_SIZE)
 coins = build_tile_map("platformer_coins.csv", TILE_SIZE)
 backgrounds = build_tile_map("platformer_background.csv", TILE_SIZE)
 enemies_1 = build_tile_map("platformer_enemies_1.csv", TILE_SIZE)
@@ -39,10 +39,15 @@ player.is_on_ground = False
 player.direction = 'right'
 player.is_invincible = False
 player.invincibility_timer = 0
+player.is_attacking = False
+player.attack_timer = 0
+player.attack_cooldown = 0
 game_over = False
+game_won = False
 score = 0
 game_state = 'menu'
 sound_on = True
+music_on = True
 
 
 hearts = []
@@ -54,7 +59,8 @@ for i in range(player.health):
 coin_ui_icon = Actor("tiles/tile_0002")
 coin_ui_icon.topleft = (10, 10)
 
-
+title_name = Actor("ui/title_name")
+title_name.pos = (WIDTH / 2, HEIGHT / 2 - 100)
 button_start = Actor("ui/start_button")
 button_start.pos = (WIDTH / 2, HEIGHT / 2 - 10)
 button_sound = Actor("ui/music_button")
@@ -108,17 +114,53 @@ enemie_2_frames = [
 player.animation_timer = 0
 player.current_frame = 0
 ANIMATION_SPEED = 5
+ATTACK_DURATION = 20
+ATTACK_COOLDOWN = 30
+ENEMY_ANIMATION_SPEED = 8
+
+
+for enemy in enemies_1:
+    enemy.velocity_y = 0.5
+    enemy.patrol_distance = 30
+    enemy.patrol_start_y = enemy.y
+    enemy.animation_timer = 0
+    enemy.current_frame = 0
+
+for enemy in enemies_2:
+    enemy.velocity_x = 0.8
+    enemy.patrol_distance = 50
+    enemy.patrol_start_x = enemy.x
+    enemy.animation_timer = 0
+    enemy.current_frame = 0
 
 
 music.play('down_under')
 
 
 def on_music_end():
-    if sound_on:
+    if music_on:
         music.play('down_under')
 
 
+def take_damage():
+    global game_over
+    if not player.is_invincible:
+        player.health -= 1
+        player.is_invincible = True
+        player.invincibility_timer = 90
+        player.velocity_y = jump_velocity * 0.6
+        if sound_on:
+            sounds.sfx_hurt.play()
+        if hearts:
+            hearts.pop()
+
+        if player.health <= 0:
+            game_over = True
+            clock.schedule_unique(quit, 5.0)
+
+
 def draw_game():
+    global game_won
     screen.clear()
 
     for background in backgrounds:
@@ -128,10 +170,6 @@ def draw_game():
     for platform in platforms:
         pos = (platform.left - camera_x, platform.top - camera_y)
         screen.blit(platform.image, pos)
-
-    for obstacle in obstacles:
-        pos = (obstacle.left - camera_x, obstacle.top - camera_y)
-        screen.blit(obstacle.image, pos)
 
     for coin in coins:
         pos = (coin.left - camera_x, coin.top - camera_y)
@@ -176,17 +214,25 @@ def draw_game():
             shadow=(2, 2),
             scolor="black"
         )
+        sounds.game_over.play()
+    
+    if game_won:
+        screen.draw.text(
+            "You Won!",
+            center=(WIDTH / 2, HEIGHT / 2),
+            color="yellow",
+            fontsize=80,
+            shadow=(2, 2),
+            scolor="black"
+        )
+        sounds.win.play()
 
 
 def draw_menu():
     screen.clear()
     screen.fill("black")
-    screen.draw.text(
-        TITLE,
-        center=(WIDTH / 2, HEIGHT / 2 - 100),
-        color="white",
-        fontsize=60
-    )
+
+    title_name.draw()
     button_start.draw()
     button_sound.draw()
     button_quit.draw()
@@ -200,28 +246,73 @@ def draw():
 
 
 def update_game():
-    global camera_x, camera_y, score, game_over
+    global camera_x, camera_y, score, game_over, game_won
 
-    if game_over:
+    if game_over or game_won:
         return
 
+    for enemy in enemies_1:
+        enemy.y += enemy.velocity_y
+        if abs(enemy.y - enemy.patrol_start_y) >= enemy.patrol_distance:
+            enemy.velocity_y *= -1
+        
+        enemy.animation_timer += 1
+        if enemy.animation_timer >= ENEMY_ANIMATION_SPEED:
+            enemy.animation_timer = 0
+            enemy.current_frame = (
+                (enemy.current_frame + 1) % len(enemie_1_frames)
+            )
+            enemy.image = enemie_1_frames[enemy.current_frame]
+
+    for enemy in enemies_2:
+        enemy.x += enemy.velocity_x
+        if abs(enemy.x - enemy.patrol_start_x) >= enemy.patrol_distance:
+            enemy.velocity_x *= -1
+
+        enemy.animation_timer += 1
+        if enemy.animation_timer >= ENEMY_ANIMATION_SPEED:
+            enemy.animation_timer = 0
+            enemy.current_frame = (
+                (enemy.current_frame + 1) % len(enemie_2_frames)
+            )
+            enemy.image = enemie_2_frames[enemy.current_frame]
+    
     is_moving_horizontally = False
 
-    if keyboard.left and player.left > 0:
-        player.x -= player.velocity_x
-        player.direction = 'left'
-        is_moving_horizontally = True
-    
-    if keyboard.right and player.right < WIDTH:
-        player.x += player.velocity_x
-        player.direction = 'right'
-        is_moving_horizontally = True
+    if not player.is_attacking:
+        if keyboard.left and player.left > 0:
+            player.x -= player.velocity_x
+            player.direction = 'left'
+            is_moving_horizontally = True
+        
+        if keyboard.right and player.right < WIDTH:
+            player.x += player.velocity_x
+            player.direction = 'right'
+            is_moving_horizontally = True
 
     if player.jump_buffer_timer > 0:
         player.jump_buffer_timer -= 1
     if player.coyote_timer > 0:
         player.coyote_timer -= 1
-
+    if player.attack_cooldown > 0:
+        player.attack_cooldown -= 1
+    
+    if player.is_attacking:
+        player.attack_timer -= 1
+        
+        hitbox_x = player.right if player.direction == 'right' else player.left - 24
+        attack_hitbox = Rect(hitbox_x, player.top, 24, player.height)
+        
+        for enemy in enemies_1[:]:
+            if enemy.colliderect(attack_hitbox):
+                enemies_1.remove(enemy)
+        for enemy in enemies_2[:]:
+            if enemy.colliderect(attack_hitbox):
+                enemies_2.remove(enemy)
+        
+        if player.attack_timer <= 0:
+            player.is_attacking = False
+    
     if player.jump_buffer_timer > 0 and player.coyote_timer > 0:
         player.velocity_y = jump_velocity
         player.is_on_ground = False
@@ -236,19 +327,11 @@ def update_game():
         if player.invincibility_timer <= 0:
             player.is_invincible = False
     else:
-        if player.collidelist(obstacles) != -1:
-            player.health -= 1
-            player.is_invincible = True
-            player.invincibility_timer = 90
-            player.velocity_y = jump_velocity * 0.6
-            if sound_on:
-                sounds.sfx_hurt.play()
-            if hearts:
-                hearts.pop()
-
-            if player.health <= 0:
-                game_over = True
-                clock.schedule_unique(quit, 3.0)
+        if not player.is_attacking:
+            for enemy_list in [enemies_1, enemies_2]:
+                if player.collidelist(enemy_list) != -1:
+                    take_damage()
+                    break
 
     player.is_on_ground = False
     if player.velocity_y >= 0:
@@ -268,9 +351,28 @@ def update_game():
             score += 1
             if sound_on:
                 sounds.sfx_coin.play()
+    
+    for diamond in diamonds[:]:
+        if player.colliderect(diamond):
+            game_won = True
+            clock.schedule_unique(quit, 5.0)
+            break
 
     player.animation_timer += 1
-    if player.is_invincible:
+    if player.is_attacking:
+        if player.direction == 'right':
+            frame_index = (
+                (ATTACK_DURATION - player.attack_timer) //
+                (ATTACK_DURATION // len(attack_right_frames))
+            )
+            player.image = attack_right_frames[frame_index]
+        else:
+            frame_index = (
+                (ATTACK_DURATION - player.attack_timer) //
+                (ATTACK_DURATION // len(attack_left_frames))
+            )
+            player.image = attack_left_frames[frame_index]
+    elif player.is_invincible:
         if player.direction == 'right':
             frame_index = (
                 player.animation_timer // 15 % len(hurt_right_frames)
@@ -281,33 +383,25 @@ def update_game():
                 player.animation_timer // 15 % len(hurt_left_frames)
             )
             player.image = hurt_left_frames[frame_index]
-
     elif is_moving_horizontally and player.is_on_ground:
         if player.animation_timer >= ANIMATION_SPEED:
             player.animation_timer = 0
+            player.current_frame = (
+                (player.current_frame + 1) % len(walk_right_frames)
+            )
             if player.direction == 'right':
-                player.current_frame = (
-                    (player.current_frame + 1) % len(walk_right_frames)
-                )
                 player.image = walk_right_frames[player.current_frame]
             else:
-                player.current_frame = (
-                    (player.current_frame + 1) % len(walk_left_frames)
-                )
                 player.image = walk_left_frames[player.current_frame]
-
     elif player.is_on_ground:
         if player.animation_timer >= ANIMATION_SPEED:
             player.animation_timer = 0
+            player.current_frame = (
+                (player.current_frame + 1) % len(idle_right_frames)
+            )
             if player.direction == 'right':
-                player.current_frame = (
-                    (player.current_frame + 1) % len(idle_right_frames)
-                )
                 player.image = idle_right_frames[player.current_frame]
             else:
-                player.current_frame = (
-                    (player.current_frame + 1) % len(idle_left_frames)
-                )
                 player.image = idle_left_frames[player.current_frame]
 
     target_x = player.x - WIDTH / 2
@@ -324,15 +418,22 @@ def update():
 
 def on_key_down(key):
     global game_state
-    if game_state == 'playing':
-        if key == keys.UP and not game_over:
+    if game_state == 'playing' and not game_over:
+        if key == keys.UP:
             player.jump_buffer_timer = JUMP_BUFFER_FRAMES
             if sound_on:
                 sounds.sfx_jump.play()
+        
+        if key == keys.D and not player.is_attacking and player.attack_cooldown <= 0:
+            player.is_attacking = True
+            player.attack_timer = ATTACK_DURATION
+            player.attack_cooldown = ATTACK_COOLDOWN
+            if sound_on:
+                sounds.sfx_attack.play()
 
 
 def on_mouse_down(pos):
-    global game_state, sound_on
+    global game_state, music_on
     if game_state == 'menu':
         if button_start.collidepoint(pos):
             game_state = 'playing'
@@ -341,8 +442,8 @@ def on_mouse_down(pos):
             quit()
         
         if button_sound.collidepoint(pos):
-            sound_on = not sound_on
-            if sound_on:
+            music_on = not music_on
+            if music_on:
                 button_sound.image = 'ui/music_button'
                 music.unpause()
             else:
