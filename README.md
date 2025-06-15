@@ -30,6 +30,7 @@ pip install pgzero
 * Linguagem de Programação: Python
 * Bibliotecas: PyGame Zero
 * UI/UX: <a href="https://kenney.nl/assets/1-bit-platformer-pack">Kenney Assets</a> e <a href="https://craftpix.net/freebies/free-pixel-art-tiny-hero-sprites/">CraftPix.net</a>
+* Música e sons: <a href='https://innlydian.itch.io/8-bit-music-pack'>Innlydian (Itch.io)</a> e <a href="https://kenney.nl/assets/1-bit-platformer-pack">Kenney Assets</a>
 * IDEs: VSCode
 
 
