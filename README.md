@@ -36,8 +36,6 @@ pip install pgzero
 
 ![keyboard_d_outline](https://github.com/user-attachments/assets/1fedc623-a7f7-41e6-a8d0-5e7a02ed5c18)
 
-* **Não necessariamente uma tecla**, porém ao pular na cabeça de um inimigo, ele é derrotado também.
-
 ## Ferramentas Utilizadas:
 
 * Linguagem de Programação: Python
